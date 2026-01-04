@@ -1,0 +1,27 @@
+[project]
+name = "rt-games"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.0",
+    "torchvision",
+    "lpips",
+    "piq",
+    "numpy",
+    "scipy",
+    "pillow",
+    "opencv-python",
+    "pandas",
+    "tqdm",
+    "imageio[ffmpeg]",
+    "timm",
+    "scikit-learn",
+    "scikit-image",
+    "torch-fidelity"
+]
+
+[project.optional-dependencies]
+flow = ["torch>=2.0"]
+aesthetic = ["laion-aesthetic"]
