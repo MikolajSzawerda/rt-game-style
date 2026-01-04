@@ -1,0 +1,80 @@
+MIT License
+
+Copyright (c) 2024-2026 rt-games contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
+
+THIRD-PARTY LICENSES AND ATTRIBUTIONS
+
+This toolkit incorporates code and algorithms from the following sources.
+Please refer to the original repositories for their respective licenses.
+
+1. LPIPS (Perceptual Similarity)
+   Source: https://github.com/richzhang/PerceptualSimilarity
+   License: BSD-2-Clause
+   Citation: Zhang et al., "The Unreasonable Effectiveness of Deep Features
+             as a Perceptual Metric" (CVPR 2018)
+
+2. pytorch-fid / SIFID
+   Source: https://github.com/mseitzer/pytorch-fid
+   License: Apache License 2.0
+   Copyright 2018 Institute of Bioinformatics, JKU Linz
+
+3. ArtFID
+   Source: https://github.com/matthias-wright/art-fid
+   License: MIT
+   Citation: Wright & Ommer, "ArtFID: Quantitative Evaluation of Neural
+             Style Transfer" (GCPR 2022)
+
+4. HistoGAN (RGB-uv Histogram)
+   Source: https://github.com/mahmoudnafifi/HistoGAN
+   Copyright 2021 Mahmoud Afifi
+   Citation: Afifi et al., "HistoGAN: Controlling Colors of GAN-Generated
+             and Real Images via Color Histograms" (CVPR 2021)
+
+5. MambaST / StyleID / AttenST (Evaluation Framework)
+   Source: https://github.com/FilippoBotti/MambaST
+           https://github.com/jiwoogit/StyleID
+           https://github.com/HuanBor/AttenST
+   License: MIT (StyleID), others unspecified
+   Citations: See README.md for full bibliography
+
+6. ReCoNet-PyTorch (Warping/Temporal Utilities)
+   Source: https://github.com/safwankdb/ReCoNet-PyTorch
+   Citation: Gao et al., "ReCoNet: Real-time Coherent Video Style Transfer
+             Network" (ACCV 2018)
+
+7. MiDaS (Depth Estimation)
+   Source: https://github.com/intel-isl/MiDaS
+   License: MIT
+
+8. AdaIN-style / pytorch-AdaIN
+   Source: https://github.com/xunhuang1995/AdaIN-style
+           https://github.com/naoto0804/pytorch-AdaIN
+   License: MIT
+   Citation: Huang & Belongie, "Arbitrary Style Transfer in Real-time with
+             Adaptive Instance Normalization" (ICCV 2017)
+
+--------------------------------------------------------------------------------
+
+If you use this toolkit in academic work, please cite the relevant papers
+listed in the README.md and the original papers for the metrics you use.
+

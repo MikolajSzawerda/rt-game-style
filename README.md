@@ -310,3 +310,136 @@ See **[METRICS.md](METRICS.md)** for full documentation including:
 - Mathematical definitions
 - Model architecture details
 - Evaluation protocols from published papers
+
+---
+
+## Acknowledgments and Citations
+
+This toolkit unifies evaluation code from several style transfer research repositories. We gratefully acknowledge the following sources:
+
+### Metric Implementations
+
+| Metric | Source Repository | Original Paper |
+|--------|-------------------|----------------|
+| `lpips` | [richzhang/PerceptualSimilarity](https://github.com/richzhang/PerceptualSimilarity) | Zhang et al., "The Unreasonable Effectiveness of Deep Features as a Perceptual Metric" (CVPR 2018) |
+| `gram_loss`, `content_loss` | [MambaST](https://github.com/FilippoBotti/MambaST), [StyleID](https://github.com/jiwoogit/StyleID) | Gatys et al., "Image Style Transfer Using Convolutional Neural Networks" (CVPR 2016) |
+| `cfsd` (PatchSimi) | [MambaST](https://github.com/FilippoBotti/MambaST), [StyleID](https://github.com/jiwoogit/StyleID) | — |
+| `histogan` | [mahmoudnafifi/HistoGAN](https://github.com/mahmoudnafifi/HistoGAN) | Afifi et al., "HistoGAN: Controlling Colors of GAN-Generated and Real Images via Color Histograms" (CVPR 2021) |
+| `fid`, `artfid` | [matthias-wright/art-fid](https://github.com/matthias-wright/art-fid) | Wright & Ommer, "ArtFID: Quantitative Evaluation of Neural Style Transfer" (GCPR 2022) |
+| `sifid` | [mseitzer/pytorch-fid](https://github.com/mseitzer/pytorch-fid) | Shaham et al., "SinGAN: Learning a Generative Model from a Single Natural Image" (ICCV 2019) |
+| `ssim` | [piq](https://github.com/photosynthesis-team/piq) | Wang et al., "Image Quality Assessment: From Error Visibility to Structural Similarity" (IEEE TIP 2004) |
+| `warping_error` | [safwankdb/ReCoNet-PyTorch](https://github.com/safwankdb/ReCoNet-PyTorch) | Gao et al., "ReCoNet: Real-time Coherent Video Style Transfer Network" (ACCV 2018) |
+| `temporal_lpips`, `depth_error` | GBGST¹ | Iordache et al., "Towards Real-time G-buffer-Guided Style Transfer in Computer Games" (IEEE ToG 2024) |
+
+¹ GBGST temporal evaluation code; MiDaS depth estimation via [intel-isl/MiDaS](https://github.com/intel-isl/MiDaS).
+
+### Style Transfer Method Repositories
+
+The evaluation framework was developed alongside and tested with these style transfer implementations:
+
+- **[AdaIN-style](https://github.com/xunhuang1995/AdaIN-style)** (Torch) — Huang & Belongie, "Arbitrary Style Transfer in Real-time with Adaptive Instance Normalization" (ICCV 2017)
+- **[pytorch-AdaIN](https://github.com/naoto0804/pytorch-AdaIN)** — Unofficial PyTorch implementation of AdaIN
+- **[StyleID](https://github.com/jiwoogit/StyleID)** — Chung et al., "Style Injection in Diffusion: A Training-free Approach for Adapting Large-scale Diffusion Models for Style Transfer" (CVPR 2024 Highlight)
+- **[MambaST](https://github.com/FilippoBotti/MambaST)** — Botti et al., "Mamba-ST: State Space Model for Efficient Style Transfer" (WACV 2025)
+- **[AttenST](https://github.com/HuanBor/AttenST)** — Huang et al., "AttenST: A Training-Free Attention-Driven Style Transfer Framework with Pre-Trained Diffusion Models" (arXiv 2025)
+- **GBGST** — Iordache et al., "Towards Real-time G-buffer-Guided Style Transfer in Computer Games" (IEEE ToG 2024)
+
+### BibTeX Citations
+
+```bibtex
+% === Evaluation Metrics ===
+
+@inproceedings{zhang2018perceptual,
+  title={The Unreasonable Effectiveness of Deep Features as a Perceptual Metric},
+  author={Zhang, Richard and Isola, Phillip and Efros, Alexei A and Shechtman, Eli and Wang, Oliver},
+  booktitle={CVPR},
+  year={2018}
+}
+
+@article{wang2004ssim,
+  title={Image Quality Assessment: From Error Visibility to Structural Similarity},
+  author={Wang, Zhou and Bovik, Alan C and Sheikh, Hamid R and Simoncelli, Eero P},
+  journal={IEEE Transactions on Image Processing},
+  volume={13},
+  number={4},
+  pages={600--612},
+  year={2004}
+}
+
+@inproceedings{gatys2016image,
+  title={Image Style Transfer Using Convolutional Neural Networks},
+  author={Gatys, Leon A and Ecker, Alexander S and Bethge, Matthias},
+  booktitle={CVPR},
+  year={2016}
+}
+
+@inproceedings{afifi2021histogan,
+  title={HistoGAN: Controlling Colors of GAN-Generated and Real Images via Color Histograms},
+  author={Afifi, Mahmoud and Brubaker, Marcus A. and Brown, Michael S.},
+  booktitle={CVPR},
+  year={2021}
+}
+
+@article{wright2022artfid,
+  title={ArtFID: Quantitative Evaluation of Neural Style Transfer},
+  author={Wright, Matthias and Ommer, Bj{\"o}rn},
+  journal={GCPR},
+  year={2022}
+}
+
+@inproceedings{gao2019reconet,
+  title={ReCoNet: Real-time Coherent Video Style Transfer Network},
+  author={Gao, Chang and Gu, Derun and Zhang, Fangwei and Yu, Yizhou},
+  booktitle={ACCV},
+  year={2018}
+}
+
+% === Style Transfer Methods ===
+
+@inproceedings{huang2017adain,
+  title={Arbitrary Style Transfer in Real-time with Adaptive Instance Normalization},
+  author={Huang, Xun and Belongie, Serge},
+  booktitle={ICCV},
+  year={2017}
+}
+
+@inproceedings{chung2024styleid,
+  title={Style Injection in Diffusion: A Training-free Approach for Adapting Large-scale Diffusion Models for Style Transfer},
+  author={Chung, Jiwoo and Hyun, Sangeek and Heo, Jae-Pil},
+  booktitle={CVPR},
+  year={2024}
+}
+
+@inproceedings{botti2025mamba,
+  title={Mamba-ST: State Space Model for Efficient Style Transfer},
+  author={Botti, Filippo and Ergasti, Alex and Rossi, Leonardo and Fontanini, Tomaso and Ferrari, Claudio and Bertozzi, Massimo and Prati, Andrea},
+  booktitle={WACV},
+  year={2025}
+}
+
+@misc{huang2025attenst,
+  title={AttenST: A Training-Free Attention-Driven Style Transfer Framework with Pre-Trained Diffusion Models},
+  author={Huang, Bo and Xu, Wenlun and Han, Qizhuo and Jing, Haodong and Li, Ying},
+  year={2025},
+  eprint={2503.07307},
+  archivePrefix={arXiv},
+  primaryClass={cs.CV}
+}
+
+@article{iordache2024gbgst,
+  title={Towards Real-time G-buffer-Guided Style Transfer in Computer Games},
+  author={Iordache, Emil and others},
+  journal={IEEE Transactions on Games},
+  year={2024}
+}
+```
+
+---
+
+## License
+
+This project is licensed under the **MIT License** — see [LICENSE](LICENSE) for details.
+
+**Third-party code:** This toolkit incorporates code from multiple open-source projects with various licenses (MIT, BSD-2-Clause, Apache 2.0). The LICENSE file contains a full attribution list. Most source repositories use permissive licenses compatible with MIT. If you redistribute this code, ensure you comply with the attribution requirements listed in the LICENSE file.
+
+**Academic use:** If you use this toolkit in published research, please cite the relevant papers for the metrics you use (see BibTeX section above).
