@@ -3,11 +3,15 @@
 Python CLI to evaluate style transfer models (image + game/video) with SOTA metrics used in `paper.md`, MambaST, StyleID, AttenST. You provide frames; the toolkit aligns them, runs metrics, and writes CSVs.
 
 ### Metrics
-- Content/style: LPIPS, SSIM, Content Loss (VGG), Gram Loss.
-- Style fidelity: FID_style (art_inception), SIFID, HistoGAN distance, CFSD.
-- Composite: ArtFID = (1 + LPIPS_content) * (1 + FID_style).
-- Temporal/game: Warping Error (flow-based), Temporal LPIPS, Depth Error (MiDaS or provided depth).
-- Optional: Aesthetic score hook; efficiency can be measured around CLI calls.
+
+See **[METRICS.md](METRICS.md)** for full documentation with paper sources and model dependencies.
+
+| Category | Metrics |
+|----------|---------|
+| Content/style | LPIPS, SSIM, Content Loss (VGG), Gram Loss |
+| Style fidelity | FID_style (art_inception), SIFID, HistoGAN distance, CFSD |
+| Composite | ArtFID = (1 + LPIPS_content) × (1 + FID_style) |
+| Temporal/game | Warping Error (flow-based), Temporal LPIPS, Depth Error (MiDaS) |
 
 ### Expected input layout
 Image metrics:

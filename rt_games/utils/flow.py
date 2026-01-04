@@ -9,7 +9,14 @@ def load_raft(device: str = "cuda", model_name: str = "raft-small"):
     Load RAFT model from torch hub. Keeps download optional to avoid breaking
     in environments without internet; caller should handle exceptions.
     """
-    raft = torch.hub.load("princeton-vl/RAFT", model_name, pretrained=True)
+    try:
+        raft = torch.hub.load("princeton-vl/RAFT", model_name, pretrained=True)
+    except Exception as exc:
+        raise ImportError(
+            f"Failed to load RAFT model '{model_name}'. "
+            "Ensure internet access or provide precomputed flow. "
+            f"Original error: {exc}"
+        )
     raft = raft.to(device)
     raft.eval()
     return raft

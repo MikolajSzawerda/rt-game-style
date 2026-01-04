@@ -93,7 +93,7 @@ def temporal_lpips(
                 raise ValueError("Flow data not provided and RAFT disabled.")
 
         y1_warped = warp(y1, flow)
-        val = lpips_fn(y1_warped, y2)
+        val = lpips_fn(y1_warped * 2 - 1, y2 * 2 - 1)
         total += float(val.mean().item())
         count += 1
     return total / max(count, 1)

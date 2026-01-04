@@ -4,6 +4,7 @@ from typing import Optional
 import torch
 import torch.nn.functional as F
 from PIL import Image
+import numpy as np
 
 from rt_games.data.transforms import build_transform
 from rt_games.models.midas import load_midas
@@ -45,12 +46,18 @@ def depth_error(
             depth_gt = _load_depth_from_image(depth_maps[idx], size, device)
         else:
             with torch.no_grad():
-                inp = midas_transform(Image.open(orig_path)).to(device)
-                depth_gt = midas_model(inp).unsqueeze(0)
+                img_np = np.array(Image.open(orig_path).convert("RGB"))
+                inp = midas_transform(img_np).to(device)
+                if inp.dim() == 3:
+                    inp = inp.unsqueeze(0)
+                depth_gt = midas_model(inp)
 
         with torch.no_grad():
-            sty_in = midas_transform(Image.open(sty_path)).to(device)
-            depth_sty = midas_model(sty_in).unsqueeze(0)
+            img_np = np.array(Image.open(sty_path).convert("RGB"))
+            sty_in = midas_transform(img_np).to(device)
+            if sty_in.dim() == 3:
+                sty_in = sty_in.unsqueeze(0)
+            depth_sty = midas_model(sty_in)
         # scale-invariant log RMSE
         diff = torch.log(depth_sty + 1e-6) - torch.log(depth_gt + 1e-6)
         si = torch.sqrt((diff ** 2).mean() - diff.mean() ** 2)

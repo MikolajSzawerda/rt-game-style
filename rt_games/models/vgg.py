@@ -3,6 +3,7 @@ from typing import Dict
 import torch
 import torch.nn as nn
 from torchvision import models
+import torch
 
 
 VGG_LAYERS = {
@@ -23,10 +24,13 @@ class VGG16Features(nn.Module):
         vgg = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_V1).features
         self.layers = layers
         self.model = nn.Sequential(*list(vgg.children())[: max(layers.values()) + 1])
+        self.register_buffer("mean", torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1))
+        self.register_buffer("std", torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1))
         for p in self.parameters():
             p.requires_grad = False
 
     def forward(self, x):
+        x = (x - self.mean) / self.std
         outputs = {}
         for name, layer in self.model._modules.items():
             x = layer(x)

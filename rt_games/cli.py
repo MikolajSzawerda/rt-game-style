@@ -43,6 +43,9 @@ def _run_image_for_method(method_dir: Path, args, cfg) -> Dict[str, float]:
     # per-image averages
     per_image_metrics = [m for m in metrics if m not in DATASET_METRICS]
     for name in per_image_metrics:
+        if not METRICS_REGISTRY.has(name):
+            print(f"[warn] Unknown metric '{name}', skipping.")
+            continue
         fn = METRICS_REGISTRY.get(name)
         vals = []
         for s in samples:

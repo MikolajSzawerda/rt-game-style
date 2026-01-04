@@ -30,7 +30,7 @@ def lpips_content(content_path: Path, stylized_path: Path, device: str = "cuda",
     loss_fn = lpips.LPIPS(net=net).to(device)
     c, s = _load_pair(content_path, stylized_path, size, device)
     with torch.no_grad():
-        val = loss_fn(c, s)
+        val = loss_fn(c * 2 - 1, s * 2 - 1)
     return float(val.mean().item())
 
 
