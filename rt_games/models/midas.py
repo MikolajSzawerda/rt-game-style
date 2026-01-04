@@ -14,4 +14,3 @@ def load_midas(device: str = "cuda", model_type: str = "DPT_Hybrid"):
     else:
         tfm = transform.small_transform
     return midas, tfm
-

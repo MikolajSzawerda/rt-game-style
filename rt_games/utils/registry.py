@@ -27,4 +27,3 @@ class MetricRegistry:
 
 
 METRICS_REGISTRY = MetricRegistry()
-

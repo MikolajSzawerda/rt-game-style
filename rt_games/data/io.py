@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional
 
 from PIL import Image
 
@@ -17,7 +17,9 @@ def _list_images(root: Path) -> List[Path]:
     return sorted([p for p in root.iterdir() if p.suffix.lower() in exts])
 
 
-def validate_image_triplets(content_dir: Path, style_dir: Path, stylized_dir: Path) -> List[SamplePaths]:
+def validate_image_triplets(
+    content_dir: Path, style_dir: Path, stylized_dir: Path
+) -> List[SamplePaths]:
     """
     Validate and align files using naming {content}_stylized_{style}.ext
     Returns list of SamplePaths with matched triplets.
@@ -32,9 +34,13 @@ def validate_image_triplets(content_dir: Path, style_dir: Path, stylized_dir: Pa
             raise ValueError(f"Stylized file {p.name} missing '_stylized_' convention")
         content_stem, style_stem = stem.split("_stylized_", maxsplit=1)
         if content_stem not in content_map:
-            raise ValueError(f"Content image {content_stem} not found for stylized {p.name}")
+            raise ValueError(
+                f"Content image {content_stem} not found for stylized {p.name}"
+            )
         if style_stem not in style_map:
-            raise ValueError(f"Style image {style_stem} not found for stylized {p.name}")
+            raise ValueError(
+                f"Style image {style_stem} not found for stylized {p.name}"
+            )
         samples.append(
             SamplePaths(
                 content=content_map[content_stem],
@@ -52,4 +58,3 @@ def load_image(path: Path, size: Optional[int] = None):
     if size:
         img = img.resize((size, size))
     return img
-

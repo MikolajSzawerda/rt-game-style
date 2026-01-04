@@ -1,13 +1,13 @@
 from pathlib import Path
-from typing import Iterable, List, Optional
+from typing import List, Optional
 
 import numpy as np
 import torch
 import torch.nn.functional as F
 from PIL import Image
+from scipy import linalg
 from torch import nn
 
-import numpy as np
 
 from rt_games.config import DEFAULT_CONFIG
 from rt_games.data.transforms import build_transform
@@ -46,7 +46,9 @@ def gram_loss(
         y_feats = vgg(stylized)
         total = 0.0
         for layer in layers:
-            total += F.mse_loss(gram_matrix(y_feats[layer]), gram_matrix(s_feats[layer]))
+            total += F.mse_loss(
+                gram_matrix(y_feats[layer]), gram_matrix(s_feats[layer])
+            )
         loss = total / len(layers)
     return float(loss.item())
 
@@ -59,15 +61,59 @@ def _load_inception(device: str, use_art: bool, cfg=DEFAULT_CONFIG):
     return ModelCache.get_inception(lambda d: load_inception(d), device, art=False)
 
 
-@METRICS_REGISTRY.register("fid")
-def _compute_frechet_distance(real_feats: torch.Tensor, fake_feats: torch.Tensor) -> float:
-    mu1, mu2 = real_feats.mean(0), fake_feats.mean(0)
-    sigma1 = torch.from_numpy(np.cov(real_feats.numpy(), rowvar=False)).float()
-    sigma2 = torch.from_numpy(np.cov(fake_feats.numpy(), rowvar=False)).float()
+def _compute_frechet_distance(
+    real_feats: torch.Tensor, fake_feats: torch.Tensor, eps: float = 1e-6
+) -> float:
+    """
+    Compute Frechet distance between two sets of features.
+
+    Uses scipy.linalg.sqrtm for matrix square root computation.
+
+    Args:
+        real_feats: Features from real images, shape (N, D)
+        fake_feats: Features from fake images, shape (M, D)
+        eps: Small value for numerical stability
+
+    Returns:
+        Frechet distance value
+    """
+    n_real, d = real_feats.shape
+    n_fake = fake_feats.shape[0]
+
+    mu1 = real_feats.mean(0).numpy()
+    mu2 = fake_feats.mean(0).numpy()
+
     diff = mu1 - mu2
-    covmean = torch.linalg.sqrtm((sigma1 @ sigma2).to(torch.float64)).real.to(torch.float32)
-    fid = diff.dot(diff) + torch.trace(sigma1 + sigma2 - 2 * covmean)
-    return float(fid.item())
+
+    # Handle edge case: single sample cannot compute proper covariance
+    # In this case, just return squared mean difference
+    if n_real < 2 or n_fake < 2:
+        return float(diff.dot(diff))
+
+    sigma1 = np.cov(real_feats.numpy(), rowvar=False)
+    sigma2 = np.cov(fake_feats.numpy(), rowvar=False)
+
+    # Ensure covariance matrices are 2D
+    sigma1 = np.atleast_2d(sigma1)
+    sigma2 = np.atleast_2d(sigma2)
+
+    # Product might be almost singular
+    covmean, _ = linalg.sqrtm(sigma1.dot(sigma2), disp=False)
+
+    if not np.isfinite(covmean).all():
+        # Add epsilon to diagonal for numerical stability
+        offset = np.eye(sigma1.shape[0]) * eps
+        covmean = linalg.sqrtm((sigma1 + offset).dot(sigma2 + offset))
+
+    # Numerical error might give slight imaginary component
+    if np.iscomplexobj(covmean):
+        if not np.allclose(np.diagonal(covmean).imag, 0, atol=1e-3):
+            m = np.max(np.abs(covmean.imag))
+            raise ValueError(f"Imaginary component {m}")
+        covmean = covmean.real
+
+    fid = diff.dot(diff) + np.trace(sigma1 + sigma2 - 2 * covmean)
+    return float(fid)
 
 
 @METRICS_REGISTRY.register("fid")
@@ -104,15 +150,45 @@ def fid_score(
         return float(result["frechet_inception_distance"])
 
 
-def _get_activations_single(path: Path, model: nn.Module, device: str, size: Optional[int]) -> torch.Tensor:
+def _get_activations_single(
+    path: Path, model: nn.Module, device: str, size: Optional[int]
+) -> torch.Tensor:
+    """Get activations for a single image, flattened to (1, features)."""
     t = build_transform(size)
     with torch.no_grad():
         x = t(Image.open(path).convert("RGB")).unsqueeze(0).to(device)
-        f = model._forward_impl(x)[0].view(1, -1)
+        f = model(x)
+        # Handle InceptionV3 wrapper which returns a list of feature maps
+        if isinstance(f, list):
+            f = f[0]
+        # Global average pool and flatten
+        f = F.adaptive_avg_pool2d(f, (1, 1)).view(1, -1)
         return f.cpu().float()
 
 
-def _get_features(paths: List[Path], model: nn.Module, device: str, size: Optional[int]) -> torch.Tensor:
+def _get_activations_with_patches(
+    path: Path, model: nn.Module, device: str, size: Optional[int]
+) -> torch.Tensor:
+    """
+    Get patch-level activations for SIFID computation.
+    Returns tensor of shape (num_patches, features) for covariance computation.
+    """
+    t = build_transform(size)
+    with torch.no_grad():
+        x = t(Image.open(path).convert("RGB")).unsqueeze(0).to(device)
+        f = model(x)
+        # Handle InceptionV3 wrapper which returns a list of feature maps
+        if isinstance(f, list):
+            f = f[0]  # (1, C, H, W)
+        # Reshape to (H*W, C) to get multiple samples for covariance
+        n, c, h, w = f.shape
+        f = f.permute(0, 2, 3, 1).reshape(h * w, c)
+        return f.cpu().float()
+
+
+def _get_features(
+    paths: List[Path], model: nn.Module, device: str, size: Optional[int]
+) -> torch.Tensor:
     feats = []
     for p in paths:
         feats.append(_get_activations_single(p, model, device, size))
@@ -127,7 +203,14 @@ def sifid_score(
     size: Optional[int] = None,
     use_art_inception: bool = True,
     sample_limit: Optional[int] = None,
+    eps: float = 1e-6,
 ):
+    """
+    Compute Single-Image FID (SIFID) between style and stylized image pairs.
+
+    Uses patch-level features to compute covariance matrices, following the
+    original SIFID paper approach.
+    """
     model = _load_inception(device, use_art_inception)
     style_paths = sorted(list(style_dir.glob("*")))
     stylized_paths = sorted(list(stylized_dir.glob("*")))
@@ -139,20 +222,23 @@ def sifid_score(
         raise ValueError("No images for SIFID.")
     sifid_vals = []
     for s_path, y_path in zip(style_paths[:n], stylized_paths[:n]):
-        s_feat = _get_activations_single(s_path, model, device, size)
-        y_feat = _get_activations_single(y_path, model, device, size)
-        mu1, mu2 = s_feat.mean(0), y_feat.mean(0)
-        sigma1 = torch.from_numpy(np.cov(s_feat.numpy(), rowvar=False)).float()
-        sigma2 = torch.from_numpy(np.cov(y_feat.numpy(), rowvar=False)).float()
-        diff = mu1 - mu2
-        covmean = torch.linalg.sqrtm((sigma1 @ sigma2).to(torch.float64)).real.to(torch.float32)
-        fid = diff.dot(diff) + torch.trace(sigma1 + sigma2 - 2 * covmean)
-        sifid_vals.append(float(fid.item()))
+        # Use patch-level features for proper covariance computation
+        s_feat = _get_activations_with_patches(s_path, model, device, size)
+        y_feat = _get_activations_with_patches(y_path, model, device, size)
+
+        # Compute per-image FID using patch statistics
+        fid_val = _compute_frechet_distance(s_feat, y_feat, eps=eps)
+        sifid_vals.append(fid_val)
     return float(np.mean(sifid_vals))
 
 
 @METRICS_REGISTRY.register("cfsd")
-def cfsd(content_path: Path, stylized_path: Path, device: str = "cuda", size: Optional[int] = None):
+def cfsd(
+    content_path: Path,
+    stylized_path: Path,
+    device: str = "cuda",
+    size: Optional[int] = None,
+):
     """
     Simplified CFSD: compare patch cosine similarity on VGG relu3_3.
     """
@@ -165,7 +251,9 @@ def cfsd(content_path: Path, stylized_path: Path, device: str = "cuda", size: Op
         s_feat = vgg(s)["relu3_3"]
     # unfold patches
     patch = 3
-    c_unf = F.unfold(c_feat, kernel_size=patch, stride=patch).transpose(1, 2)  # (N, P, C*k*k)
+    c_unf = F.unfold(c_feat, kernel_size=patch, stride=patch).transpose(
+        1, 2
+    )  # (N, P, C*k*k)
     s_unf = F.unfold(s_feat, kernel_size=patch, stride=patch).transpose(1, 2)
     c_norm = F.normalize(c_unf, dim=-1)
     s_norm = F.normalize(s_unf, dim=-1)
@@ -192,7 +280,7 @@ class RGBuvHistBlock(nn.Module):
         x = x.view(n, c, -1)
         x_exp = x.unsqueeze(-1)  # (N,3,HW,1)
         bin_diff = (x_exp - self.bin_vals) ** 2
-        weights = torch.exp(-bin_diff / (2 * self.sigma ** 2))
+        weights = torch.exp(-bin_diff / (2 * self.sigma**2))
         hist = weights.sum(dim=2)
         hist = hist / (hist.sum(dim=-1, keepdim=True) + 1e-8)
         return hist
@@ -214,4 +302,3 @@ def histogan_distance(
         h_y = block(y)
         dist = F.l1_loss(h_s, h_y)
     return float(dist.item())
-

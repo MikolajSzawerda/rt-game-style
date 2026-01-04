@@ -1,6 +1,3 @@
-from pathlib import Path
-from typing import Optional
-
 import torch
 
 
@@ -33,6 +30,7 @@ def compute_flow(
     """
     # RAFT expects list of images
     with torch.no_grad():
-        flow_low, flow_up = raft_model(img1, img2, iters=20, test_mode=True, pad=pad_to_multiple)
+        flow_low, flow_up = raft_model(
+            img1, img2, iters=20, test_mode=True, pad=pad_to_multiple
+        )
     return flow_up
-

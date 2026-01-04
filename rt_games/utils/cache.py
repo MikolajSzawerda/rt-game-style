@@ -3,7 +3,7 @@ from typing import Any, Optional
 
 class ModelCache:
     """
-    Lightweight model cache to avoid reloading heavy nets (VGG, MiDaS, Inception).
+    Lightweight model cache to avoid reloading heavy nets (VGG, MiDaS, Inception, LPIPS).
     """
 
     _vgg: Optional[Any] = None
@@ -11,6 +11,7 @@ class ModelCache:
     _inception: Optional[Any] = None
     _art_inception: Optional[Any] = None
     _flow: Optional[Any] = None
+    _lpips: Optional[Any] = None
 
     @classmethod
     def get_vgg(cls, factory, device: str):
@@ -37,3 +38,8 @@ class ModelCache:
             cls._flow = factory(device)
         return cls._flow
 
+    @classmethod
+    def get_lpips(cls, factory, device: str):
+        if cls._lpips is None:
+            cls._lpips = factory(device)
+        return cls._lpips

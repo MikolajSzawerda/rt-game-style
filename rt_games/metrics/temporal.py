@@ -9,6 +9,7 @@ import lpips
 from rt_games.data.transforms import build_transform
 from rt_games.utils.cache import ModelCache
 from rt_games.utils.flow import compute_flow, load_raft
+from rt_games.utils.registry import METRICS_REGISTRY
 from rt_games.utils.warp import warp
 
 
@@ -17,6 +18,7 @@ def _load_frame(path: Path, size: Optional[int], device: str):
     return t(Image.open(path).convert("RGB")).unsqueeze(0).to(device)
 
 
+@METRICS_REGISTRY.register("warping_error")
 def warping_error(
     original_dir: Path,
     stylized_dir: Path,
@@ -25,12 +27,12 @@ def warping_error(
     size: Optional[int] = None,
     use_raft: bool = True,
 ):
+    """Compute warping error between consecutive stylized frames."""
     originals = sorted(list(original_dir.glob("*")))
     stylized = sorted(list(stylized_dir.glob("*")))
     if len(originals) < 2 or len(stylized) < 2:
         raise ValueError("Need at least two frames for temporal metrics.")
 
-    lpips_fn = lpips.LPIPS(net="alex").to(device)
     total = 0.0
     count = 0
     raft_model = None
@@ -58,6 +60,12 @@ def warping_error(
     return total / max(count, 1)
 
 
+def _build_lpips(device: str):
+    """Factory function to build LPIPS model for temporal metrics."""
+    return lpips.LPIPS(net="alex").to(device)
+
+
+@METRICS_REGISTRY.register("temporal_lpips")
 def temporal_lpips(
     original_dir: Path,
     stylized_dir: Path,
@@ -66,12 +74,13 @@ def temporal_lpips(
     size: Optional[int] = None,
     use_raft: bool = True,
 ):
+    """Compute temporal LPIPS consistency between consecutive stylized frames."""
     originals = sorted(list(original_dir.glob("*")))
     stylized = sorted(list(stylized_dir.glob("*")))
     if len(originals) < 2 or len(stylized) < 2:
         raise ValueError("Need at least two frames for temporal metrics.")
 
-    lpips_fn = lpips.LPIPS(net="alex").to(device)
+    lpips_fn = ModelCache.get_lpips(_build_lpips, device)
     total = 0.0
     count = 0
     raft_model = None
@@ -97,4 +106,3 @@ def temporal_lpips(
         total += float(val.mean().item())
         count += 1
     return total / max(count, 1)
-

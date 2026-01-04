@@ -23,5 +23,17 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-flow = ["torch>=2.0"]
-aesthetic = ["laion-aesthetic"]
+dev = ["pytest", "pytest-cov"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning"
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.10",
+]
+

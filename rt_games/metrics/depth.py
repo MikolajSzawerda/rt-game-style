@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Optional
 
 import torch
-import torch.nn.functional as F
 from PIL import Image
 import numpy as np
 
@@ -60,8 +59,7 @@ def depth_error(
             depth_sty = midas_model(sty_in)
         # scale-invariant log RMSE
         diff = torch.log(depth_sty + 1e-6) - torch.log(depth_gt + 1e-6)
-        si = torch.sqrt((diff ** 2).mean() - diff.mean() ** 2)
+        si = torch.sqrt((diff**2).mean() - diff.mean() ** 2)
         total += float(si.item())
         count += 1
     return total / max(count, 1)
-

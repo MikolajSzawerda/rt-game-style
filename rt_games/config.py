@@ -32,4 +32,3 @@ class EvalConfig:
 
 
 DEFAULT_CONFIG = EvalConfig()
-

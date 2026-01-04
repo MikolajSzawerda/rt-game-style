@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional
 
 import torch
 from torchvision import transforms as T
@@ -18,4 +18,3 @@ def to_tensor(img, image_size: Optional[int] = None) -> torch.Tensor:
 
 def to_pil(t: torch.Tensor):
     return T.ToPILImage()(t.clamp(0, 1))
-

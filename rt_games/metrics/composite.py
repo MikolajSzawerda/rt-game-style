@@ -20,8 +20,11 @@ def artfid(
     - FID_style between style set and stylized set
     """
     samples = validate_image_triplets(content_dir, style_dir, stylized_dir)
-    lpips_vals = [lpips_content(s.content, s.stylized, device=device, size=size) for s in samples]
+    lpips_vals = [
+        lpips_content(s.content, s.stylized, device=device, size=size) for s in samples
+    ]
     lpips_mean = sum(lpips_vals) / len(lpips_vals) if lpips_vals else 0.0
-    fid_val = fid_score(style_dir, stylized_dir, device=device, use_art_inception=use_art_inception)
+    fid_val = fid_score(
+        style_dir, stylized_dir, device=device, use_art_inception=use_art_inception
+    )
     return (1.0 + lpips_mean) * (1.0 + fid_val)
-

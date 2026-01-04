@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import torch
 import torch.nn.functional as F
 
@@ -22,6 +20,7 @@ def warp(img: torch.Tensor, flow: torch.Tensor) -> torch.Tensor:
     grid_x = 2.0 * grid_x / max(w - 1, 1) - 1.0
     grid_y = 2.0 * grid_y / max(h - 1, 1) - 1.0
     grid = torch.stack((grid_x, grid_y), dim=3)
-    warped = F.grid_sample(img, grid, mode="bilinear", padding_mode="border", align_corners=True)
+    warped = F.grid_sample(
+        img, grid, mode="bilinear", padding_mode="border", align_corners=True
+    )
     return warped
-
