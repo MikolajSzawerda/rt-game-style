@@ -1,4 +1,5 @@
 import argparse
+import logging
 from pathlib import Path
 from typing import Dict
 
@@ -13,6 +14,16 @@ from rt_games.utils.registry import METRICS_REGISTRY
 
 DATASET_METRICS = {"fid", "sifid", "artfid"}
 TEMPORAL_METRICS = {"warping_error", "temporal_lpips", "depth_error"}
+
+
+def _maybe_tqdm(seq, enable: bool, desc: str):
+    if not enable:
+        return seq
+    try:
+        from tqdm.auto import tqdm
+    except ImportError:  # pragma: no cover - tqdm is a dependency, but be safe
+        return seq
+    return tqdm(seq, desc=desc, leave=False)
 
 
 def parse_args():
@@ -31,6 +42,12 @@ def parse_args():
     p.add_argument("--image-size", type=int, default=None)
     p.add_argument("--device", type=str, default="cuda")
     p.add_argument("--output", type=Path, required=True)
+    p.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="suppress progress bars and info messages",
+    )
     return p.parse_args()
 
 
@@ -50,11 +67,13 @@ def _run_image_for_method(method_dir: Path, args, cfg) -> Dict[str, float]:
     per_image_metrics = [m for m in metrics if m not in DATASET_METRICS]
     for name in per_image_metrics:
         if not METRICS_REGISTRY.has(name):
-            print(f"[warn] Unknown metric '{name}', skipping.")
+            logging.warning("Unknown metric '%s', skipping.", name)
             continue
         fn = METRICS_REGISTRY.get(name)
         vals = []
-        for s in samples:
+        for s in _maybe_tqdm(
+            samples, not args.quiet, desc=f"{stylized_dir.name}:{name}"
+        ):
             kwargs = {"device": args.device}
             if args.image_size is not None:
                 kwargs["size"] = args.image_size
@@ -149,17 +168,41 @@ def run_temporal_mode(args, cfg):
 
 def main():
     args = parse_args()
+    logging.basicConfig(
+        level=logging.WARNING if args.quiet else logging.INFO,
+        format="[%(levelname)s] %(message)s",
+    )
     cfg = DEFAULT_CONFIG
     cfg.image_size = args.image_size
     cfg.device = args.device
+    logging.info(
+        "mode=%s device=%s image_size=%s metrics=%s",
+        args.mode,
+        args.device,
+        args.image_size,
+        args.metrics or "default",
+    )
     if args.mode == "image":
+        logging.info(
+            "content=%s style=%s stylized/methods=%s",
+            args.content,
+            args.style,
+            args.stylized or args.methods_dir,
+        )
         rows = run_image_mode(args, cfg)
     else:
+        logging.info(
+            "original=%s stylized=%s flow=%s depth=%s",
+            args.original,
+            args.stylized,
+            args.flow,
+            args.depth,
+        )
         rows = run_temporal_mode(args, cfg)
     df = pd.DataFrame(rows)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(args.output, index=False)
-    print(f"Saved metrics to {args.output}")
+    logging.info("Saved metrics to %s", args.output)
 
 
 if __name__ == "__main__":

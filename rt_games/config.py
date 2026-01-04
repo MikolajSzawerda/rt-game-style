@@ -27,7 +27,6 @@ class EvalConfig:
     midas_model: str = "DPT_Hybrid"
     force_cpu_flow: bool = False
     force_cpu_depth: bool = False
-    verbose: bool = False
     metrics: Optional[List[str]] = None
 
 

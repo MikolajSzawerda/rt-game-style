@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Optional
 
 
@@ -17,12 +18,14 @@ class ModelCache:
     def get_vgg(cls, factory, device: str):
         if cls._vgg is None:
             cls._vgg = factory(device)
+            logging.info("Loaded VGG16 into cache on %s", device)
         return cls._vgg
 
     @classmethod
     def get_midas(cls, factory, device: str):
         if cls._midas is None:
             cls._midas = factory(device)
+            logging.info("Loaded MiDaS into cache on %s", device)
         return cls._midas
 
     @classmethod
@@ -30,16 +33,23 @@ class ModelCache:
         key = "_art_inception" if art else "_inception"
         if getattr(cls, key) is None:
             setattr(cls, key, factory(device))
+            logging.info(
+                "Loaded %sInception into cache on %s",
+                "art_" if art else "",
+                device,
+            )
         return getattr(cls, key)
 
     @classmethod
     def get_flow(cls, factory, device: str):
         if cls._flow is None:
             cls._flow = factory(device)
+            logging.info("Loaded RAFT flow model into cache on %s", device)
         return cls._flow
 
     @classmethod
     def get_lpips(cls, factory, device: str):
         if cls._lpips is None:
             cls._lpips = factory(device)
+            logging.info("Loaded LPIPS model into cache on %s", device)
         return cls._lpips

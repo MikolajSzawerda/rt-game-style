@@ -1,3 +1,5 @@
+import logging
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -167,8 +169,9 @@ def load_art_inception(device: str, checkpoint_url: str) -> nn.Module:
     model = Inception3(aux_logits=False, transform_input=False, init_weights=False)
     missing, unexpected = model.load_state_dict(state_dict, strict=False)
     if missing or unexpected:
-        # Not ideal but we proceed; warn caller by printing.
-        print(f"[warn] art_inception missing keys: {missing}, unexpected: {unexpected}")
+        logging.warning(
+            "art_inception missing keys: %s, unexpected: %s", missing, unexpected
+        )
     model.to(device)
     model.eval()
     return model
