@@ -121,8 +121,9 @@ gen style n:
 # =============================================================================
 
 list-styles:
-    @echo "Available styles in {{style_dir}}:"
-    @ls {{style_dir}}/*.{jpg,jpeg,png} 2>/dev/null | xargs -n1 basename | sed 's/\.[^.]*$//' || echo "(none - run: just download-styles)"
+    #!/usr/bin/env bash
+    echo "Available styles in {{style_dir}}:"
+    ls {{style_dir}}/*.{jpg,jpeg,png} 2>/dev/null | xargs -rn1 basename | sed 's/\.[^.]*$//' || echo "(none - run: just download-styles)"
 
 check-weights:
     #!/usr/bin/env bash
