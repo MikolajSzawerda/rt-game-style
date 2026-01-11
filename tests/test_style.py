@@ -219,7 +219,9 @@ class TestGetActivationsWithPatches:
         p = tmp_path / "test.jpg"
         img.save(p)
 
-        feats = _get_activations_with_patches(p, inception_v3_block0_model, "cpu", size=None)
+        feats = _get_activations_with_patches(
+            p, inception_v3_block0_model, "cpu", size=None
+        )
 
         # Should have multiple patches (H*W rows) with 64 features
         assert feats.dim() == 2
@@ -334,8 +336,8 @@ class TestHistoganDistance:
 
     def test_different_images_positive_distance(self, tmp_path):
         """Histogram distance of different color images should be positive."""
-        img1 = Image.new("RGB", (64, 64), color=(200, 50, 50))   # Reddish
-        img2 = Image.new("RGB", (64, 64), color=(50, 50, 200))   # Bluish
+        img1 = Image.new("RGB", (64, 64), color=(200, 50, 50))  # Reddish
+        img2 = Image.new("RGB", (64, 64), color=(50, 50, 200))  # Bluish
         p1 = tmp_path / "style.jpg"
         p2 = tmp_path / "stylized.jpg"
         img1.save(p1)
@@ -489,13 +491,17 @@ class TestGetActivationsSingle:
         feats = _get_activations_single(p, art_inception_model, "cpu", size=299)
         assert feats.shape == (1, 2048)
 
-    def test_inception_v3_wrapper_returns_features(self, tmp_path, inception_v3_block0_model_with_resize):
+    def test_inception_v3_wrapper_returns_features(
+        self, tmp_path, inception_v3_block0_model_with_resize
+    ):
         """_get_activations_single should work with InceptionV3 wrapper."""
         img = Image.new("RGB", (64, 64), color="blue")
         p = tmp_path / "test.jpg"
         img.save(p)
 
-        feats = _get_activations_single(p, inception_v3_block0_model_with_resize, "cpu", size=299)
+        feats = _get_activations_single(
+            p, inception_v3_block0_model_with_resize, "cpu", size=299
+        )
         assert feats.dim() == 2
         assert feats.shape[0] == 1
 

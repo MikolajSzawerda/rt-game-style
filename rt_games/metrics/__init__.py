@@ -24,5 +24,3 @@ __all__ = [
     "temporal_lpips",
     "depth_error",
 ]
-
-

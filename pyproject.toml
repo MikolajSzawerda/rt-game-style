@@ -38,3 +38,8 @@ dev = [
     "ruff>=0.14.10",
 ]
 
+[tool.ruff]
+exclude = [
+    "baselines/gbgst/repo",
+]
+

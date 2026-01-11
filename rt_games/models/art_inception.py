@@ -7,7 +7,6 @@ extracting 2048-dim features before the final classification layer via `return_f
 Based on: https://github.com/sigk/evaluating-evaluation-metrics/blob/main/ArtFID/art_fid/inception.py
 """
 
-import warnings
 from typing import Any, Callable, List, Optional, Tuple
 
 import torch
@@ -473,4 +472,3 @@ class BasicConv2d(nn.Module):
         x = self.conv(x)
         x = self.bn(x)
         return F.relu(x, inplace=True)
-

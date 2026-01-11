@@ -10,9 +10,9 @@ class TestArtFID:
 
     def test_artfid_handles_different_sized_images(self, tmp_path):
         """Regression test: artfid should handle different-sized images.
-        
-        This was a bug where size=None was passed to lpips_content, 
-        causing tensor size mismatches when content and stylized 
+
+        This was a bug where size=None was passed to lpips_content,
+        causing tensor size mismatches when content and stylized
         images had different dimensions.
         """
         from rt_games.metrics.composite import artfid
@@ -28,7 +28,9 @@ class TestArtFID:
         Image.new("RGB", (100, 200), "red").save(content_dir / "img1.jpg")
         Image.new("RGB", (80, 80), "blue").save(style_dir / "starry.jpg")
         # Stylized has different size than content
-        Image.new("RGB", (150, 180), "purple").save(stylized_dir / "img1_stylized_starry.jpg")
+        Image.new("RGB", (150, 180), "purple").save(
+            stylized_dir / "img1_stylized_starry.jpg"
+        )
 
         # Should NOT raise RuntimeError about tensor size mismatch
         result = artfid(content_dir, style_dir, stylized_dir, device="cpu")
@@ -80,7 +82,9 @@ class TestArtFID:
         # Create test images
         Image.new("RGB", (64, 64), "red").save(content_dir / "img1.jpg")
         Image.new("RGB", (64, 64), "blue").save(style_dir / "style.jpg")
-        Image.new("RGB", (64, 64), "purple").save(stylized_dir / "img1_stylized_style.jpg")
+        Image.new("RGB", (64, 64), "purple").save(
+            stylized_dir / "img1_stylized_style.jpg"
+        )
 
         # Compute components manually with size=512 (default)
         lpips_val = lpips_content(
@@ -89,11 +93,12 @@ class TestArtFID:
             device="cpu",
             size=512,
         )
-        fid_val = fid_score(style_dir, stylized_dir, device="cpu", use_art_inception=True)
+        fid_val = fid_score(
+            style_dir, stylized_dir, device="cpu", use_art_inception=True
+        )
         expected = (1.0 + lpips_val) * (1.0 + fid_val)
 
         # Compute via artfid function
         result = artfid(content_dir, style_dir, stylized_dir, device="cpu")
 
         assert abs(result - expected) < 0.01
-

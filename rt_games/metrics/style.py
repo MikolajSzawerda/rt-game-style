@@ -25,6 +25,7 @@ except ImportError:
 try:
     from tqdm.auto import tqdm
 except ImportError:
+
     def tqdm(x, **kwargs):
         return x
 
@@ -391,9 +392,7 @@ class RGBuvHistBlock(nn.Module):
 
             # Intensity scaling factor
             if self.intensity_scale:
-                Iy = torch.sqrt(
-                    II[:, 0] + II[:, 1] + II[:, 2] + self.eps
-                ).unsqueeze(1)
+                Iy = torch.sqrt(II[:, 0] + II[:, 1] + II[:, 2] + self.eps).unsqueeze(1)
             else:
                 Iy = torch.ones(I.shape[0], 1, device=x.device)
 
