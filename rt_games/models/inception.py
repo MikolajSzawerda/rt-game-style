@@ -13,7 +13,7 @@ except ImportError:
 
     _HAS_WEIGHTS_API = False
 
-from torchvision.models.inception import Inception3
+from rt_games.models.art_inception import ArtInception3
 
 
 class InceptionV3(nn.Module):
@@ -162,11 +162,14 @@ class InceptionV3(nn.Module):
 def load_art_inception(device: str, checkpoint_url: str) -> nn.Module:
     """
     Load art_inception checkpoint (used by ArtFID and style FID in SOTA papers).
+
+    Returns an ArtInception3 model that supports `return_features=True` in forward()
+    to extract 2048-dim features before the classification layer.
     """
     state_dict = torch.hub.load_state_dict_from_url(
         checkpoint_url, progress=True, map_location=device
     )
-    model = Inception3(aux_logits=False, transform_input=False, init_weights=False)
+    model = ArtInception3(aux_logits=False, transform_input=False, init_weights=False)
     missing, unexpected = model.load_state_dict(state_dict, strict=False)
     if missing or unexpected:
         logging.warning(

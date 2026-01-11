@@ -11,7 +11,7 @@ def artfid(
     style_dir: Path,
     stylized_dir: Path,
     device: str = "cuda",
-    size: Optional[int] = None,
+    size: Optional[int] = 512,
     use_art_inception: bool = True,
 ) -> float:
     """

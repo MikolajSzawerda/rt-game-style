@@ -83,6 +83,10 @@ test:
 test-cov:
     uv run pytest tests/ --cov=rt_games --cov-report=term-missing
 
+test-cov-svg:
+    uv run pytest tests/ --cov=rt_games --cov-report=term-missing
+    uv run coverage-badge -o docs/coverage.svg -f
+
 lint:
     uv run ruff check rt_games/
 

@@ -98,16 +98,19 @@ def _run_image_for_method(method_dir: Path, args, cfg) -> Dict[str, float]:
             style_dir,
             stylized_dir,
             device=args.device,
-            use_art_inception=cfg.use_art_inception,
         )
     if "artfid" in metrics:
+        artfid_kwargs = {
+            "device": args.device,
+            "use_art_inception": cfg.use_art_inception,
+        }
+        if args.image_size is not None:
+            artfid_kwargs["size"] = args.image_size
         results["artfid"] = composite.artfid(
             content_dir,
             style_dir,
             stylized_dir,
-            device=args.device,
-            size=args.image_size,
-            use_art_inception=cfg.use_art_inception,
+            **artfid_kwargs,
         )
     return results
 
