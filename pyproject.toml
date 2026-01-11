@@ -19,7 +19,8 @@ dependencies = [
     "timm",
     "scikit-learn",
     "scikit-image",
-    "torch-fidelity"
+    "torch-fidelity",
+    "opencv-python",
 ]
 
 [project.optional-dependencies]

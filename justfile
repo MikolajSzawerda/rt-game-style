@@ -36,6 +36,16 @@ data-status:
     cd baselines && just data-status
 
 # =============================================================================
+# VIDEO - Prepare video
+# =============================================================================
+
+extract-frames video frames output_dir:
+    uv run python -m rt_games.extract_frames \
+        --video {{video}} \
+        --frames {{frames}} \
+        --output {{output_dir}}
+
+# =============================================================================
 # BASELINES - Setup and generation
 # =============================================================================
 
