@@ -1,50 +1,48 @@
 # GBGST baseline - G-buffer Guided Style Transfer
-# Paper: https://github.com/ioannouE/GBGST
+# https://github.com/ioannouE/GBGST
 
 set dotenv-load
 
-weights_dir := "weights"
-content_dir := "../../evaluation/content"
-style_dir := "../../evaluation/style"  
-output_dir := "../../evaluation/methods/GBGST"
+# Paths - all data in ../data/
+data_dir := "../data"
+coco_dir := data_dir / "coco/val2017"
+style_dir := data_dir / "style"
+weights_dir := data_dir / "weights/gbgst"
+outputs_dir := data_dir / "outputs"
+
 submodule := "repo/saved_models"
 github_raw := "https://github.com/ioannouE/GBGST/raw/main/saved_models"
-
 styles := "starry_night mosaic feathers wave composition_vii"
 
 # =============================================================================
 # SETUP
 # =============================================================================
 
-# Full setup: submodule + deps + weights
 setup: init-submodule sync link-weights
-    @echo "✓ GBGST ready! Run 'just generate'"
+    @echo "✓ GBGST ready!"
 
-# Init git submodule
 init-submodule:
     #!/usr/bin/env bash
     set -euo pipefail
     [ -f "repo/README.md" ] && echo "Submodule OK" && exit 0
-    echo "Initializing submodule..."
     cd ../.. && git submodule update --init baselines/gbgst/repo
 
-# Sync deps with uv
 sync:
     uv sync
 
-# Link weights from submodule
 link-weights:
     #!/usr/bin/env bash
     set -euo pipefail
     mkdir -p {{weights_dir}}
     [ -d "{{submodule}}" ] || { echo "Run 'just init-submodule' first"; exit 1; }
     for style in {{styles}}; do
-        [ -f "{{submodule}}/${style}.pth" ] && \
-            ln -sf "../../{{submodule}}/${style}.pth" "{{weights_dir}}/${style}.pth" && \
+        src="{{submodule}}/${style}.pth"
+        if [ -f "$src" ]; then
+            ln -sf "$(cd $(dirname $src) && pwd)/${style}.pth" "{{weights_dir}}/${style}.pth"
             echo "✓ ${style}.pth"
+        fi
     done
 
-# Download weights directly (if no submodule)
 download-weights:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -56,53 +54,46 @@ download-weights:
     done
 
 # =============================================================================
-# GENERATION
+# GENERATE - Called from root: just gen gbgst <style> <n>
 # =============================================================================
 
-# Generate stylized images for all content/style pairs
-generate:
+# Generate N images from COCO with given style
+# Output: ../data/outputs/gbgst_{style}_{n}/
+gen style n:
     #!/usr/bin/env bash
-    set -euo pipefail
-    mkdir -p {{output_dir}}
+    set -eu
+    if [ ! -d "{{coco_dir}}" ]; then
+        echo "COCO not found. Run: just download-coco"
+        exit 1
+    fi
+    if [ ! -f "{{weights_dir}}/{{style}}.pth" ]; then
+        echo "Weight not found: {{style}}.pth. Run: just setup gbgst"
+        exit 1
+    fi
+    
+    output_dir="{{outputs_dir}}/gbgst_{{style}}_{{n}}"
+    mkdir -p "$output_dir"
+    
+    # Get first N COCO images
+    content_files=$(find "{{coco_dir}}" -maxdepth 1 -type f -name "*.jpg" | sort | head -{{n}} | xargs -n1 basename | tr '\n' ' ')
+    
+    echo "Generating {{n}} images with {{style}}..."
     uv run python generate.py \
-        --content-dir {{content_dir}} \
+        --content-dir {{coco_dir}} \
         --style-dir {{style_dir}} \
         --weights-dir {{weights_dir}} \
-        --output-dir {{output_dir}}
-
-# Generate with specific style
-generate-style style:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    mkdir -p {{output_dir}}
-    uv run python generate.py \
-        --content-dir {{content_dir}} \
-        --style-dir {{style_dir}} \
-        --weights-dir {{weights_dir}} \
-        --output-dir {{output_dir}} \
-        --styles {{style}}
-
-# Quick test with one image
-test image="church.jpg" style="starry_night":
-    #!/usr/bin/env bash
-    set -euo pipefail
-    mkdir -p outputs/test
-    uv run python generate.py \
-        --content-dir {{content_dir}} \
-        --weights-dir {{weights_dir}} \
-        --output-dir outputs/test \
-        --content-images {{image}} \
-        --styles {{style}}
+        --output-dir "$output_dir" \
+        --styles {{style}} \
+        --content-images $content_files
+    
+    echo "✓ Output: $output_dir ($(ls $output_dir | wc -l) files)"
 
 # =============================================================================
 # UTILITIES
 # =============================================================================
 
 list-weights:
-    @ls -la {{weights_dir}}/*.pth 2>/dev/null || echo "(none - run 'just link-weights')"
+    @ls -la {{weights_dir}}/*.pth 2>/dev/null || echo "(none)"
 
 clean:
-    rm -rf {{output_dir}}/* outputs/test/*
-
-clean-all: clean
-    rm -rf {{weights_dir}}/* .venv
+    rm -rf {{outputs_dir}}/gbgst_*

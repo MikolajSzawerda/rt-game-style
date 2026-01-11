@@ -1,84 +1,65 @@
-# baselines/justfile - Shared recipes for baseline models
+# baselines/justfile - Data management
+#
+# All data lives in data/ (gitignored):
+#   data/
+#   ├── coco/val2017/     # COCO images
+#   ├── style/            # Style images
+#   ├── weights/gbgst/    # Model weights
+#   └── outputs/          # Generated outputs
 
 set dotenv-load
 
-eval_dir := "../evaluation"
+data_dir := "data"
+coco_dir := data_dir / "coco/val2017"
+style_dir := data_dir / "style"
+
 github_gbgst := "https://raw.githubusercontent.com/ioannouE/GBGST/main"
 
 # =============================================================================
-# EVALUATION DATA
+# DOWNLOAD DATA
 # =============================================================================
 
-# Download style images from GBGST repo (matches pretrained model names)
-[group('data')]
+# Download style images
 download-styles:
     #!/usr/bin/env bash
     set -euo pipefail
-    mkdir -p {{eval_dir}}/style
-    
+    mkdir -p {{style_dir}}
     styles="starry_night mosaic feathers wave composition_vii"
     for style in $styles; do
-        if [ ! -f "{{eval_dir}}/style/${style}.jpg" ]; then
+        if [ ! -f "{{style_dir}}/${style}.jpg" ]; then
             echo "Downloading ${style}.jpg..."
-            curl -fSL -o "{{eval_dir}}/style/${style}.jpg" \
+            curl -fSL -o "{{style_dir}}/${style}.jpg" \
                 "{{github_gbgst}}/images/styles/${style}.jpg"
         else
             echo "✓ ${style}.jpg exists"
         fi
     done
-    echo "Done! Styles in {{eval_dir}}/style/"
 
-# Download content images from GBGST repo
-[group('data')]
-download-content:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    mkdir -p {{eval_dir}}/content
-    
-    images="church dandelion lighthouse ship tuebingen_neckarfront"
-    for img in $images; do
-        if [ ! -f "{{eval_dir}}/content/${img}.jpg" ]; then
-            echo "Downloading ${img}.jpg..."
-            curl -fSL -o "{{eval_dir}}/content/${img}.jpg" \
-                "{{github_gbgst}}/images/content/${img}.jpg"
-        else
-            echo "✓ ${img}.jpg exists"
-        fi
-    done
-    echo "Done! Content in {{eval_dir}}/content/"
+# Download COCO val2017 (~5K images, 1GB)
+download-coco: _shared-sync
+    cd shared && uv run python download_coco.py --output-dir ../{{data_dir}}/coco --split val2017
 
-# Download all evaluation data
-[group('data')]
-download-all: download-styles download-content
-    @echo "All evaluation data ready!"
+_shared-sync:
+    cd shared && uv sync
 
 # =============================================================================
-# UTILITIES
+# STATUS
 # =============================================================================
 
-# List available baselines
-list:
-    @echo "Baselines:" && ls -d */ 2>/dev/null | grep -v shared | sed 's/\///'
-
-# Check status of all baselines  
-status:
+data-status:
     #!/usr/bin/env bash
-    echo "Baseline Status:"
-    for dir in */; do
-        [ "$dir" = "shared/" ] && continue
-        [ -f "${dir}justfile" ] || continue
-        name="${dir%/}"
-        if [ -d "${dir}.venv" ]; then
-            echo "  ✓ $name"
-        else
-            echo "  ○ $name (run: cd $name && just setup)"
-        fi
+    echo "Data status:"
+    [ -d "{{style_dir}}" ] && echo "  ✓ style/ ($(ls {{style_dir}} 2>/dev/null | wc -l) files)" || echo "  ○ style/ (run: just download-styles)"
+    [ -d "{{coco_dir}}" ] && echo "  ✓ coco/ ($(ls {{coco_dir}} 2>/dev/null | wc -l) files)" || echo "  ○ coco/ (run: just download-coco)"
+    echo ""
+    echo "Outputs:"
+    for dir in {{data_dir}}/outputs/*/; do
+        [ -d "$dir" ] || continue
+        name=$(basename "$dir")
+        count=$(ls "$dir" 2>/dev/null | wc -l)
+        echo "  $name/ ($count files)"
     done
 
-# Clean all generated outputs
-clean-all:
-    #!/usr/bin/env bash
-    for dir in */; do
-        [ "$dir" = "shared/" ] && continue
-        [ -f "${dir}justfile" ] && (cd "$dir" && just clean 2>/dev/null || true)
-    done
+# Clean all outputs
+clean:
+    rm -rf {{data_dir}}/outputs/*

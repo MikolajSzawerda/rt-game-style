@@ -1,5 +1,6 @@
-# Shared data (downloaded, not tracked)
-shared/data/
+# All data (downloaded/generated)
+data/
 
-# Each baseline has its own .gitignore
-
+# Python
+**/.venv/
+**/__pycache__/

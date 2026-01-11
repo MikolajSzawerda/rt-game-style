@@ -20,7 +20,7 @@ from tqdm import tqdm
 REPO_PATH = Path(__file__).parent / "repo" / "depth-aware-nst"
 sys.path.insert(0, str(REPO_PATH))
 
-from transformer_net_light import TransformerNetLight  # noqa: E402
+from transformer_net import TransformerNet  # noqa: E402
 
 
 @dataclass
@@ -73,8 +73,8 @@ def save_image(path: Path, tensor: torch.Tensor) -> None:
     Image.fromarray(img).save(path)
 
 
-def load_model(weights_path: Path, device: torch.device) -> TransformerNetLight:
-    model = TransformerNetLight()
+def load_model(weights_path: Path, device: torch.device) -> TransformerNet:
+    model = TransformerNet()
     state = torch.load(weights_path, map_location=device, weights_only=True)
     
     # Remove deprecated InstanceNorm running stats
@@ -83,27 +83,10 @@ def load_model(weights_path: Path, device: torch.device) -> TransformerNetLight:
             del state[k]
     
     model.load_state_dict(state)
-    model.to(device).eval()
-    
-    # Monkey-patch forward to skip debug prints in original code
-    _orig_forward = model.forward
-    def _forward_silent(x: torch.Tensor) -> torch.Tensor:
-        # Reimplement without print statements
-        y = model.in1(model.conv1(x))
-        y = model.in2(model.conv2(y))
-        y = model.in3(model.conv3(y))
-        y = model.res1(y)
-        y = model.res2(y)
-        y = model.relu(model.in4(model.deconv1(y)))
-        y = model.relu(model.in5(model.deconv2(y)))
-        y = model.deconv3(y)
-        return y
-    model.forward = _forward_silent
-    
-    return model
+    return model.to(device).eval()
 
 
-def stylize(model: TransformerNetLight, img: Image.Image, device: torch.device) -> torch.Tensor:
+def stylize(model: TransformerNet, img: Image.Image, device: torch.device) -> torch.Tensor:
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Lambda(lambda x: x.mul(255)),

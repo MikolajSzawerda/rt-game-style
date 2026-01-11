@@ -1,8 +1,0 @@
-# Evaluation data (gitignored, download with: cd baselines && just download-all)
-#
-# evaluation/
-# ├── content/     # Content images
-# ├── style/       # Style images (must match weight names for per-style models)
-# └── methods/     # Outputs from each baseline
-#     ├── GBGST/
-#     └── ...

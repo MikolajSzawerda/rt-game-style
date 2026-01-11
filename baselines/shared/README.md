@@ -1,18 +1,28 @@
-# Shared Resources
+# Shared Utilities
 
-This directory contains shared datasets and utilities used across all baselines.
+Shared download scripts and utilities used across all baselines.
 
 ## Directory Structure
 
 ```
-shared/
-├── data/                    # Downloaded datasets
-│   ├── coco/               # COCO dataset
-│   │   └── val2017/        # Validation images
-│   ├── wikiart/            # WikiArt style images
-│   └── samples/            # Sample images for quick testing
-├── download_coco.py        # COCO download script
-└── README.md
+baselines/
+├── data/                        # All data (gitignored)
+│   ├── datasets/                # Evaluation datasets
+│   │   ├── content/             # Sample content images
+│   │   ├── style/               # Style reference images
+│   │   └── coco/
+│   │       └── val2017/         # COCO validation (~5K images)
+│   ├── weights/                 # Model weights per baseline
+│   │   └── gbgst/
+│   └── outputs/                 # Generated outputs per baseline
+│       ├── gbgst/
+│       └── gbgst_coco/
+├── gbgst/                       # Baseline code (tracked)
+├── shared/                      # This directory (tracked)
+│   ├── download_coco.py
+│   ├── pyproject.toml
+│   └── README.md
+└── justfile
 ```
 
 ## Usage
@@ -21,19 +31,21 @@ Download datasets using the parent justfile:
 
 ```bash
 # From baselines/ directory
-just download-coco
-just download-samples
+just download-samples   # Content + style images (~5 each)
+just download-coco      # COCO val2017 (~5K images, 1GB)
+just data-status        # Show what's downloaded
 ```
 
-Or use the Python script directly:
+Or use uv directly:
 
 ```bash
-python shared/download_coco.py --split val2017
+cd shared
+uv sync
+uv run python download_coco.py --output-dir ../data/datasets/coco --split val2017
 ```
 
 ## Notes
 
 - **COCO val2017**: 5K images, ~1GB download
-- **WikiArt**: Requires manual download due to licensing
-- Data directories are gitignored to avoid bloating the repo
-
+- **Data directory**: All data lives in `baselines/data/` and is gitignored
+- **No data in code directories**: Keep baseline code directories clean
