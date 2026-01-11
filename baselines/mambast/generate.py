@@ -54,7 +54,9 @@ def parse_args() -> Args:
     p.add_argument("--content-images", nargs="*", default=[])
     p.add_argument("--no-cuda", action="store_true")
     p.add_argument("--image-size", type=int, default=512)
-    p.add_argument("--d-state", type=int, default=16, help="Mamba hidden state dimension")
+    p.add_argument(
+        "--d-state", type=int, default=16, help="Mamba hidden state dimension"
+    )
     a = p.parse_args()
     return Args(**{k.replace("-", "_"): v for k, v in vars(a).items()})
 
@@ -69,16 +71,19 @@ def make_model_args(args: Args) -> SimpleNamespace:
         img_size=args.image_size,
         d_state=args.d_state,
         use_pos_embed=False,
+        rnd_style=False,  # Disable random style shuffling (training-time feature)
     )
 
 
 def load_image(path: Path, size: int) -> torch.Tensor:
     """Load image and transform to tensor [1, 3, H, W] in [0, 1]."""
-    transform = transforms.Compose([
-        transforms.Resize(size),
-        transforms.CenterCrop(size),
-        transforms.ToTensor(),
-    ])
+    transform = transforms.Compose(
+        [
+            transforms.Resize(size),
+            transforms.CenterCrop(size),
+            transforms.ToTensor(),
+        ]
+    )
     img = Image.open(path).convert("RGB")
     return transform(img).unsqueeze(0)
 
@@ -89,7 +94,9 @@ def main():
     # Device
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
-    print(f"Device: {device}" + (f" ({torch.cuda.get_device_name()})" if use_cuda else ""))
+    print(
+        f"Device: {device}" + (f" ({torch.cuda.get_device_name()})" if use_cuda else "")
+    )
 
     # Load model
     model_args = make_model_args(args)
@@ -102,7 +109,8 @@ def main():
         content_paths = [args.content_dir / name for name in args.content_images]
     else:
         content_paths = sorted(
-            p for p in args.content_dir.iterdir()
+            p
+            for p in args.content_dir.iterdir()
             if p.suffix.lower() in {".jpg", ".jpeg", ".png"}
         )
 
@@ -117,7 +125,8 @@ def main():
                     break
     else:
         style_paths = sorted(
-            p for p in args.style_dir.iterdir()
+            p
+            for p in args.style_dir.iterdir()
             if p.suffix.lower() in {".jpg", ".jpeg", ".png"}
         )
 
@@ -143,7 +152,9 @@ def main():
                     output, *_ = network(content_tensor, style_tensor)
 
                 # Save result
-                out_path = args.output_dir / f"{content_path.stem}_stylized_{style_name}.png"
+                out_path = (
+                    args.output_dir / f"{content_path.stem}_stylized_{style_name}.png"
+                )
                 save_image(output, out_path)
                 pbar.update(1)
 
@@ -152,4 +163,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

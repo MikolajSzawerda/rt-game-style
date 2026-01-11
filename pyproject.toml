@@ -42,5 +42,6 @@ dev = [
 exclude = [
     "baselines/gbgst/repo",
     "baselines/adaattn/repo",
+    "baselines/mambast/repo",
 ]
 
