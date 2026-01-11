@@ -1,3 +1,6 @@
 [submodule "baselines/gbgst/repo"]
 	path = baselines/gbgst/repo
 	url = https://github.com/ioannouE/GBGST
+[submodule "baselines/adaattn/repo"]
+	path = baselines/adaattn/repo
+	url = https://github.com/Huage001/AdaAttN.git

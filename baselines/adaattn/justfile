@@ -1,0 +1,137 @@
+# AdaAttN baseline - Attention-based Arbitrary Neural Style Transfer
+# https://github.com/Huage001/AdaAttN
+
+set dotenv-load
+
+# Paths - all data in ../data/
+data_dir := "../data"
+coco_dir := data_dir / "coco/val2017"
+style_dir := data_dir / "style"
+weights_dir := data_dir / "weights/adaattn"
+outputs_dir := data_dir / "outputs"
+
+# Google Drive file IDs for pretrained weights
+# AdaAttN_model.zip contains: vgg_normalised.pth, AdaAttN/latest_net_*.pth
+gdrive_model_id := "1LngbEPLHVaVYnOvCTLf0M_yzgxOoEjjP"
+
+# =============================================================================
+# SETUP
+# =============================================================================
+
+setup: init-submodule sync download-weights
+    @echo "✓ AdaAttN ready!"
+
+init-submodule:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    [ -f "repo/README.md" ] && echo "Submodule OK" && exit 0
+    cd ../.. && git submodule update --init baselines/adaattn/repo
+
+sync:
+    uv sync
+
+# Download pretrained weights from Google Drive
+download-weights:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p {{weights_dir}}
+    
+    # Check if weights already exist
+    if [ -f "{{weights_dir}}/vgg_normalised.pth" ] && [ -d "{{weights_dir}}/AdaAttN" ]; then
+        echo "✓ Weights already downloaded"
+        exit 0
+    fi
+    
+    echo "Downloading AdaAttN weights from Google Drive..."
+    echo "Note: You may need to download manually from:"
+    echo "  https://drive.google.com/file/d/{{gdrive_model_id}}/view"
+    echo ""
+    echo "Expected structure after extraction:"
+    echo "  {{weights_dir}}/"
+    echo "  ├── vgg_normalised.pth"
+    echo "  └── AdaAttN/"
+    echo "      ├── latest_net_decoder.pth"
+    echo "      ├── latest_net_transformer.pth"
+    echo "      └── latest_net_adaattn_3.pth"
+    echo ""
+    
+    # Try gdown if available
+    if command -v gdown &> /dev/null; then
+        cd {{weights_dir}}
+        gdown {{gdrive_model_id}} -O AdaAttN_model.zip
+        unzip -o AdaAttN_model.zip
+        rm AdaAttN_model.zip
+        echo "✓ Weights downloaded and extracted"
+    else
+        echo "Install gdown to auto-download: pip install gdown"
+        echo "Or download manually and extract to {{weights_dir}}"
+        exit 1
+    fi
+
+# =============================================================================
+# GENERATE - Called from root: just gen adaattn <style> <n>
+# =============================================================================
+
+# Generate N images from COCO with given style
+# Output: ../data/outputs/adaattn_{style}_{n}/
+gen style n:
+    #!/usr/bin/env bash
+    set -eu
+    if [ ! -d "{{coco_dir}}" ]; then
+        echo "COCO not found. Run: just download-coco"
+        exit 1
+    fi
+    if [ ! -f "{{weights_dir}}/vgg_normalised.pth" ]; then
+        echo "Weights not found. Run: just setup adaattn"
+        exit 1
+    fi
+    
+    # Find style image
+    style_file=""
+    for ext in "" ".jpg" ".jpeg" ".png"; do
+        if [ -f "{{style_dir}}/{{style}}${ext}" ]; then
+            style_file="{{style}}${ext}"
+            break
+        fi
+    done
+    if [ -z "$style_file" ]; then
+        echo "Style not found: {{style}} in {{style_dir}}"
+        exit 1
+    fi
+    
+    output_dir="{{outputs_dir}}/adaattn_{{style}}_{{n}}"
+    mkdir -p "$output_dir"
+    
+    # Get first N COCO images
+    content_files=$(find "{{coco_dir}}" -maxdepth 1 -type f -name "*.jpg" | sort | head -{{n}} | xargs -n1 basename | tr '\n' ' ')
+    
+    echo "Generating {{n}} images with {{style}}..."
+    uv run python generate.py \
+        --content-dir {{coco_dir}} \
+        --style-dir {{style_dir}} \
+        --checkpoint-dir {{weights_dir}} \
+        --output-dir "$output_dir" \
+        --styles {{style}} \
+        --content-images $content_files
+    
+    echo "✓ Output: $output_dir ($(ls $output_dir | wc -l) files)"
+
+# =============================================================================
+# UTILITIES
+# =============================================================================
+
+list-styles:
+    @echo "Available styles in {{style_dir}}:"
+    @ls {{style_dir}}/*.{jpg,jpeg,png} 2>/dev/null | xargs -n1 basename | sed 's/\.[^.]*$//' || echo "(none - run: just download-styles)"
+
+check-weights:
+    #!/usr/bin/env bash
+    echo "Checking weights in {{weights_dir}}:"
+    [ -f "{{weights_dir}}/vgg_normalised.pth" ] && echo "  ✓ vgg_normalised.pth" || echo "  ✗ vgg_normalised.pth missing"
+    [ -f "{{weights_dir}}/AdaAttN/latest_net_decoder.pth" ] && echo "  ✓ AdaAttN/latest_net_decoder.pth" || echo "  ✗ AdaAttN/latest_net_decoder.pth missing"
+    [ -f "{{weights_dir}}/AdaAttN/latest_net_transformer.pth" ] && echo "  ✓ AdaAttN/latest_net_transformer.pth" || echo "  ✗ AdaAttN/latest_net_transformer.pth missing"
+    [ -f "{{weights_dir}}/AdaAttN/latest_net_adaattn_3.pth" ] && echo "  ✓ AdaAttN/latest_net_adaattn_3.pth" || echo "  ✗ AdaAttN/latest_net_adaattn_3.pth missing"
+
+clean:
+    rm -rf {{outputs_dir}}/adaattn_*
+
