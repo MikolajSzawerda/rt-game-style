@@ -4,3 +4,6 @@
 [submodule "baselines/adaattn/repo"]
 	path = baselines/adaattn/repo
 	url = https://github.com/Huage001/AdaAttN.git
+[submodule "baselines/mambast/repo"]
+	path = baselines/mambast/repo
+	url = https://github.com/FilippoBotti/MambaST

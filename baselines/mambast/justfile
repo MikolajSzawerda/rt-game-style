@@ -1,0 +1,139 @@
+# MambaST baseline - State Space Model for Efficient Style Transfer
+# https://github.com/FilippoBotti/MambaST
+
+set dotenv-load
+
+# Paths - all data in ../data/
+data_dir := "../data"
+coco_dir := data_dir / "coco/val2017"
+style_dir := data_dir / "style"
+weights_dir := data_dir / "weights/mambast"
+outputs_dir := data_dir / "outputs"
+
+# Google Drive folder ID for pretrained weights
+gdrive_folder_id := "1pVhJFwk2f3arP7zUDFAe5_PJrPSG1gc2"
+
+# =============================================================================
+# SETUP
+# =============================================================================
+
+setup: init-submodule sync download-weights
+    @echo "✓ MambaST ready!"
+
+init-submodule:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    [ -f "repo/readme.md" ] && echo "Submodule OK" && exit 0
+    cd ../.. && git submodule update --init baselines/mambast/repo
+
+sync:
+    uv sync
+
+# Download pretrained weights from Google Drive
+download-weights: sync
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p {{weights_dir}}
+    
+    # Check if weights already exist
+    if [ -f "{{weights_dir}}/vgg_normalised.pth" ] && \
+       [ -f "{{weights_dir}}/decoder_iter_160000.pth" ] && \
+       [ -f "{{weights_dir}}/mamba_iter_160000.pth" ] && \
+       [ -f "{{weights_dir}}/embedding_iter_160000.pth" ]; then
+        echo "✓ Weights already downloaded"
+        exit 0
+    fi
+    
+    gdrive_url="https://drive.google.com/drive/folders/{{gdrive_folder_id}}"
+    
+    echo "Downloading MambaST weights from Google Drive..."
+    echo "Folder: $gdrive_url"
+    echo ""
+    echo "Expected files:"
+    echo "  - vgg_normalised.pth"
+    echo "  - decoder_iter_160000.pth"
+    echo "  - mamba_iter_160000.pth"
+    echo "  - embedding_iter_160000.pth"
+    echo ""
+    
+    # Download folder with gdown
+    cd {{weights_dir}}
+    uv run gdown --folder "$gdrive_url" --remaining-ok || {
+        echo ""
+        echo "Auto-download failed. Download manually from:"
+        echo "  $gdrive_url"
+        echo ""
+        echo "Place files in: {{weights_dir}}/"
+        exit 1
+    }
+    
+    echo "✓ Weights downloaded"
+
+# =============================================================================
+# GENERATE - Called from root: just gen mambast <style> <n>
+# =============================================================================
+
+# Generate N images from COCO with given style
+# Output: ../data/outputs/mambast_{style}_{n}/
+gen style n:
+    #!/usr/bin/env bash
+    set -eu
+    if [ ! -d "{{coco_dir}}" ]; then
+        echo "COCO not found. Run: just download-coco"
+        exit 1
+    fi
+    if [ ! -f "{{weights_dir}}/mamba_iter_160000.pth" ]; then
+        echo "Weights not found. Run: just setup mambast"
+        exit 1
+    fi
+    
+    # Find style image
+    style_file=""
+    for ext in "" ".jpg" ".jpeg" ".png"; do
+        if [ -f "{{style_dir}}/{{style}}${ext}" ]; then
+            style_file="{{style}}${ext}"
+            break
+        fi
+    done
+    if [ -z "$style_file" ]; then
+        echo "Style not found: {{style}} in {{style_dir}}"
+        exit 1
+    fi
+    
+    output_dir="{{outputs_dir}}/mambast_{{style}}_{{n}}"
+    mkdir -p "$output_dir"
+    
+    # Get first N COCO images
+    content_files=$(find "{{coco_dir}}" -maxdepth 1 -type f -name "*.jpg" | sort | head -{{n}} | xargs -n1 basename | tr '\n' ' ')
+    
+    echo "Generating {{n}} images with {{style}}..."
+    uv run python generate.py \
+        --content-dir {{coco_dir}} \
+        --style-dir {{style_dir}} \
+        --checkpoint-dir {{weights_dir}} \
+        --output-dir "$output_dir" \
+        --styles {{style}} \
+        --content-images $content_files
+    
+    echo "✓ Output: $output_dir ($(ls $output_dir | wc -l) files)"
+
+# =============================================================================
+# UTILITIES
+# =============================================================================
+
+list-styles:
+    #!/usr/bin/env bash
+    echo "Available styles in {{style_dir}}:"
+    ls {{style_dir}}/*.{jpg,jpeg,png} 2>/dev/null | xargs -rn1 basename | sed 's/\.[^.]*$//' || echo "(none)"
+
+check-weights:
+    #!/usr/bin/env bash
+    echo "Checking weights in {{weights_dir}}:"
+    [ -f "{{weights_dir}}/vgg_normalised.pth" ] && echo "  ✓ vgg_normalised.pth" || echo "  ✗ vgg_normalised.pth missing"
+    [ -f "{{weights_dir}}/decoder_iter_160000.pth" ] && echo "  ✓ decoder_iter_160000.pth" || echo "  ✗ decoder_iter_160000.pth missing"
+    [ -f "{{weights_dir}}/mamba_iter_160000.pth" ] && echo "  ✓ mamba_iter_160000.pth" || echo "  ✗ mamba_iter_160000.pth missing"
+    [ -f "{{weights_dir}}/embedding_iter_160000.pth" ] && echo "  ✓ embedding_iter_160000.pth" || echo "  ✗ embedding_iter_160000.pth missing"
+
+clean:
+    rm -rf {{outputs_dir}}/mambast_*
+

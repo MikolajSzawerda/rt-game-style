@@ -1,0 +1,23 @@
+[project]
+name = "mambast-baseline"
+version = "0.1.0"
+description = "Mamba-ST: State Space Model for Efficient Style Transfer (WACV 2025)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.0",
+    "torchvision",
+    "pillow",
+    "tqdm",
+    "einops",
+    "timm",
+    "gdown",
+    "mamba-ssm>=2.0",
+]
+
+[project.optional-dependencies]
+dev = ["ruff"]
+
+[tool.uv]
+# Standalone project with own lockfile for mamba-ssm CUDA dependency
+
