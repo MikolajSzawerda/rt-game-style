@@ -1,0 +1,20 @@
+[project]
+name = "gbgst-baseline"
+version = "0.1.0"
+description = "GBGST: G-buffer Guided Style Transfer for Computer Games"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.0",
+    "torchvision",
+    "pillow",
+    "tqdm",
+]
+
+[project.optional-dependencies]
+dev = ["ruff"]
+
+[tool.uv]
+# This is a standalone project, not part of a workspace
+# It has its own lockfile to handle potential dependency conflicts
+

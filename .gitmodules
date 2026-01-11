@@ -1,0 +1,3 @@
+[submodule "baselines/gbgst/repo"]
+	path = baselines/gbgst/repo
+	url = https://github.com/ioannouE/GBGST

@@ -1,0 +1,108 @@
+# GBGST baseline - G-buffer Guided Style Transfer
+# Paper: https://github.com/ioannouE/GBGST
+
+set dotenv-load
+
+weights_dir := "weights"
+content_dir := "../../evaluation/content"
+style_dir := "../../evaluation/style"  
+output_dir := "../../evaluation/methods/GBGST"
+submodule := "repo/saved_models"
+github_raw := "https://github.com/ioannouE/GBGST/raw/main/saved_models"
+
+styles := "starry_night mosaic feathers wave composition_vii"
+
+# =============================================================================
+# SETUP
+# =============================================================================
+
+# Full setup: submodule + deps + weights
+setup: init-submodule sync link-weights
+    @echo "✓ GBGST ready! Run 'just generate'"
+
+# Init git submodule
+init-submodule:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    [ -f "repo/README.md" ] && echo "Submodule OK" && exit 0
+    echo "Initializing submodule..."
+    cd ../.. && git submodule update --init baselines/gbgst/repo
+
+# Sync deps with uv
+sync:
+    uv sync
+
+# Link weights from submodule
+link-weights:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p {{weights_dir}}
+    [ -d "{{submodule}}" ] || { echo "Run 'just init-submodule' first"; exit 1; }
+    for style in {{styles}}; do
+        [ -f "{{submodule}}/${style}.pth" ] && \
+            ln -sf "../../{{submodule}}/${style}.pth" "{{weights_dir}}/${style}.pth" && \
+            echo "✓ ${style}.pth"
+    done
+
+# Download weights directly (if no submodule)
+download-weights:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p {{weights_dir}}
+    for style in {{styles}}; do
+        [ -f "{{weights_dir}}/${style}.pth" ] && echo "✓ ${style}.pth" && continue
+        echo "Downloading ${style}.pth..."
+        curl -fSL -o "{{weights_dir}}/${style}.pth" "{{github_raw}}/${style}.pth"
+    done
+
+# =============================================================================
+# GENERATION
+# =============================================================================
+
+# Generate stylized images for all content/style pairs
+generate:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p {{output_dir}}
+    uv run python generate.py \
+        --content-dir {{content_dir}} \
+        --style-dir {{style_dir}} \
+        --weights-dir {{weights_dir}} \
+        --output-dir {{output_dir}}
+
+# Generate with specific style
+generate-style style:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p {{output_dir}}
+    uv run python generate.py \
+        --content-dir {{content_dir}} \
+        --style-dir {{style_dir}} \
+        --weights-dir {{weights_dir}} \
+        --output-dir {{output_dir}} \
+        --styles {{style}}
+
+# Quick test with one image
+test image="church.jpg" style="starry_night":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p outputs/test
+    uv run python generate.py \
+        --content-dir {{content_dir}} \
+        --weights-dir {{weights_dir}} \
+        --output-dir outputs/test \
+        --content-images {{image}} \
+        --styles {{style}}
+
+# =============================================================================
+# UTILITIES
+# =============================================================================
+
+list-weights:
+    @ls -la {{weights_dir}}/*.pth 2>/dev/null || echo "(none - run 'just link-weights')"
+
+clean:
+    rm -rf {{output_dir}}/* outputs/test/*
+
+clean-all: clean
+    rm -rf {{weights_dir}}/* .venv

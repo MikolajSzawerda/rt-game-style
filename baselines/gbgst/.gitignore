@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# uv
+uv.lock
+
+# Weights (symlinks to submodule, or downloaded)
+weights/
+
+# Outputs
+outputs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Note: repo/ is a git submodule, not ignored
