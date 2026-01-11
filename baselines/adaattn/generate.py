@@ -111,8 +111,7 @@ def main():
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
     print(
-        f"Device: {device}"
-        + (f" ({torch.cuda.get_device_name()})" if use_cuda else "")
+        f"Device: {device}" + (f" ({torch.cuda.get_device_name()})" if use_cuda else "")
     )
 
     # Create model
@@ -170,7 +169,9 @@ def main():
                 model.test()
 
                 # Save result
-                out_path = args.output_dir / f"{content_path.stem}_stylized_{style_name}.png"
+                out_path = (
+                    args.output_dir / f"{content_path.stem}_stylized_{style_name}.png"
+                )
                 save_image(model.cs, out_path)
                 pbar.update(1)
 
@@ -179,4 +180,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -12,7 +12,7 @@ outputs_dir := data_dir / "outputs"
 
 # Google Drive file IDs for pretrained weights
 # AdaAttN_model.zip contains: vgg_normalised.pth, AdaAttN/latest_net_*.pth
-gdrive_model_id := "1LngbEPLHVaVYnOvCTLf0M_yzgxOoEjjP"
+gdrive_model_id := "1XvpD1eI4JeCBIaW5uwMT6ojF_qlzM_lo"
 
 # =============================================================================
 # SETUP
@@ -31,7 +31,7 @@ sync:
     uv sync
 
 # Download pretrained weights from Google Drive
-download-weights:
+download-weights: sync
     #!/usr/bin/env bash
     set -euo pipefail
     mkdir -p {{weights_dir}}
@@ -42,9 +42,25 @@ download-weights:
         exit 0
     fi
     
-    echo "Downloading AdaAttN weights from Google Drive..."
-    echo "Note: You may need to download manually from:"
-    echo "  https://drive.google.com/file/d/{{gdrive_model_id}}/view"
+    gdrive_url="https://drive.google.com/file/d/{{gdrive_model_id}}/view"
+    zip_file="{{weights_dir}}/AdaAttN_model.zip"
+    
+    # Try download with retries (Google Drive can be flaky)
+    for attempt in 1 2 3; do
+        echo "Attempt $attempt/3: Downloading AdaAttN weights..."
+        if uv run gdown --fuzzy "$gdrive_url" -O "$zip_file"; then
+            unzip -o "$zip_file" -d {{weights_dir}}
+            rm "$zip_file"
+            echo "✓ Weights downloaded and extracted"
+            exit 0
+        fi
+        echo "Download failed, retrying in $((attempt * 5))s..."
+        sleep $((attempt * 5))
+    done
+    
+    echo ""
+    echo "Auto-download failed after 3 attempts."
+    echo "Download manually from: $gdrive_url"
     echo ""
     echo "Expected structure after extraction:"
     echo "  {{weights_dir}}/"
@@ -53,20 +69,7 @@ download-weights:
     echo "      ├── latest_net_decoder.pth"
     echo "      ├── latest_net_transformer.pth"
     echo "      └── latest_net_adaattn_3.pth"
-    echo ""
-    
-    # Try gdown if available
-    if command -v gdown &> /dev/null; then
-        cd {{weights_dir}}
-        gdown {{gdrive_model_id}} -O AdaAttN_model.zip
-        unzip -o AdaAttN_model.zip
-        rm AdaAttN_model.zip
-        echo "✓ Weights downloaded and extracted"
-    else
-        echo "Install gdown to auto-download: pip install gdown"
-        echo "Or download manually and extract to {{weights_dir}}"
-        exit 1
-    fi
+    exit 1
 
 # =============================================================================
 # GENERATE - Called from root: just gen adaattn <style> <n>
