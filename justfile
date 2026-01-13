@@ -31,6 +31,10 @@ download-coco:
 download-styles:
     cd baselines && just download-styles
 
+# Download game videos
+download-game-videos:
+    cd baselines && just download-game-videos
+
 # Show what's downloaded
 data-status:
     cd baselines && just data-status

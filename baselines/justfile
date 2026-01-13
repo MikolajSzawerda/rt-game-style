@@ -14,6 +14,7 @@ coco_dir := data_dir / "coco/val2017"
 style_dir := data_dir / "style"
 
 github_gbgst := "https://raw.githubusercontent.com/ioannouE/GBGST/main"
+game_videos := "1ITJZaIrGZohzVK_jiXa529OnqMMj0MxM"
 
 # =============================================================================
 # DOWNLOAD DATA
@@ -38,6 +39,13 @@ download-styles:
 # Download COCO val2017 (~5K images, 1GB)
 download-coco: _shared-sync
     cd shared && uv run python download_coco.py --output-dir ../{{data_dir}}/coco --split val2017
+
+# Download game videos
+download-game-videos:
+    wget -O videos.zip --no-check-certificate "https://drive.usercontent.google.com/download?id={{game_videos}}&export=download&confirm=t"
+    unzip -o videos.zip -d data
+    mv data/rt-games-style-videos data/videos
+    rm videos.zip
 
 _shared-sync:
     cd shared && uv sync
