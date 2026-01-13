@@ -304,11 +304,17 @@ def cfsd(
     """
     vgg = ModelCache.get_vgg(build_vgg, device)
     t = build_transform(size)
+
     with torch.no_grad():
         c = t(Image.open(content_path).convert("RGB")).unsqueeze(0).to(device)
         s = t(Image.open(stylized_path).convert("RGB")).unsqueeze(0).to(device)
+
+        if s.shape != c.shape:
+            s = F.interpolate(s, size=c.shape[2:], mode="bilinear", align_corners=False)
+
         c_feat = vgg(c)["relu3_3"]
         s_feat = vgg(s)["relu3_3"]
+        
     # unfold patches
     patch = 3
     c_unf = F.unfold(c_feat, kernel_size=patch, stride=patch).transpose(
